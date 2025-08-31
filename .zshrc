@@ -9,22 +9,8 @@
 export LESSCHARSET=utf-8
 export LANG=ja_JP.UTF-8
 export OUTPUT_CHARSET=utf-8
-export LC___MESSAGES=c
-export PATH="$HOME/.nodebrew/current/bin:$PATH"
 export PATH="$HOME/.bin:$PATH"
-export PATH="$HOME/.tmux/bin:$PATH"
-export PATH="$HOME/.tmux/plugins/bin:$PATH"
-export PATH="$HOME/.redis/src:$PATH"
-export PATH="$HOME/.rbenv/bin:$PATH"
-export PATH=/usr/bin/python:$PATH
-export PATH="/usr/local/sbin:$PATH"
-export PATH="$HOME/.cabal/bin:$PATH"
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-export PATH="$PATH:/opt/yarn-[version]/bin"
-export PATH=$HOME/.local/bin/deno:$PATH
-export DENO_INSTALL="/Users/yamanoku/.local"
-export PATH="$DENO_INSTALL/bin:$PATH"
-export PATH=$HOME/cmus/bin:$PATH
+
 export PYENV_ROOT="${HOME}/.pyenv"
 if [ -d "${PYENV_ROOT}" ]; then
 	export PATH=${PYENV_ROOT}/bin:$PATH
@@ -38,7 +24,17 @@ autoload -U compinit; compinit
 zstyle ':completion:*:sudo:*' command-path /usr/local/sbin /usr/local/bin \
 	/usr/sbin /usr/bin /sbin /bin /usr/X11R6/bin \
 	/usr/local/git/bin
-export BROWSER=w3m
+# ブラウザ
+if [[ -n "$WSL_DISTRO_NAME" ]]; then
+  # WSL環境
+  export BROWSER="explorer.exe"
+elif [[ "$(uname)" == "Darwin" ]]; then
+  # macOS環境
+  export BROWSER="open"
+else
+  # その他Linux環境
+  export BROWSER="xdg-open"
+fi
 export EDITOR=vim
 bindkey -v
 autoload colors; colors
@@ -57,12 +53,12 @@ fi
 
 ### }}}
 
-# [ Option_Setting ] {{{
-setopt no_beep
-setopt auto_cd
-setopt auto_pushd
-setopt correct
-setopt magic_equal_subst
+# [ Option_Setting ] {{
+setopt no_beep            # シェルの警告・エラー等で発生するベル音（ビープ）を抑制
+setopt auto_cd            # ディレクトリ名だけを入力すると自動的に `cd` を実行
+setopt auto_pushd         # ディレクトリ移動時に自動でディレクトリスタックへ追加
+setopt correct            # コマンド名のタイポを検出し、修正候補を提示
+setopt magic_equal_subst  # `=` を使った特殊な展開を有効化
 # }}}
 
 # [ History_Setting ] {{{
@@ -129,7 +125,6 @@ function rprompt-git-current-branch {
 RPROMPT='[`rprompt-git-current-branch`%~]'
 # }}}
 
-
 # [ ListColor_Setting ] {{{
 export CLICOLOR=true
 export LSCOLORS=gxfxcxdxbxegedabagacad
@@ -143,81 +138,16 @@ zstyle ':completion:*' list-colors \
 alias o='open .'
 alias ls='ls -FG'
 alias lf='ls -alF'
-alias edrc='vim ~/.zshrc'
-alias rerc='source ~/.zshrc'
-alias -g cds="cd /Users/yamanoku/works && ls -lAG"
 alias -g cdhome="cd $HOME"
-alias -g st="status --short"
-alias -g grep='grep -n --color=auto'
+alias -g cds="cd ~yamanoku/works && ls -lAG"
 alias -g ifconfig="/sbin/ifconfig"
 alias -g ipp='ifconfig | grep "192\.168\.[0-9]*\.[0-9]*" | sed -e "s/^.*inet //" -e "s/ .*//"'
 alias -g killDS_Store="find . -name .DS_Store -exec rm -fr {} \;"
-alias -g brclean="git branch --merged|egrep -v '\*|develop|master'|xargs git branch -d"
+alias -g brclean="git branch --merged|egrep -v '\*|develop|master|main'|xargs git branch -d"
 #}}}
 
-# [ npm-completion ] {{{
-#
-# npm command completion script
-#
-# Installation: npm completion >> ~/.bashrc  (or ~/.zshrc)
-# Or, maybe: npm completion > /usr/local/etc/bash_completion.d/npm
-#
-COMP_WORDBREAKS=${COMP_WORDBREAKS/=/}
-COMP_WORDBREAKS=${COMP_WORDBREAKS/@/}
-export COMP_WORDBREAKS
-
-if type complete &>/dev/null; then
-	_npm_completion () {
-		local si="$IFS"
-		IFS=$'\n' COMPREPLY=($(COMP_CWORD="$COMP_CWORD" \
-			COMP_LINE="$COMP_LINE" \
-			COMP_POINT="$COMP_POINT" \
-			npm completion -- "${COMP_WORDS[@]}" \
-			2>/dev/null)) || return $?
-		IFS="$si"
-	}
-	complete -F _npm_completion npm
-elif type compdef &>/dev/null; then
-	_npm_completion() {
-		si=$IFS
-		compadd -- $(COMP_CWORD=$((CURRENT-1)) \
-			COMP_LINE=$BUFFER \
-			COMP_POINT=0 \
-			npm completion -- "${words[@]}" \
-			2>/dev/null)
-		IFS=$si
-	}
-	compdef _npm_completion npm
-elif type compctl &>/dev/null; then
-	_npm_completion () {
-		local cword line point words si
-		read -Ac words
-		read -cn cword
-		let cword-=1
-		read -l line
-		read -ln point
-		si="$IFS"
-		IFS=$'\n' reply=($(COMP_CWORD="$cword" \
-			COMP_LINE="$line" \
-			COMP_POINT="$point" \
-			npm completion -- "${words[@]}" \
-			2>/dev/null)) || return $?
-		IFS="$si"
-	}
-	compctl -K _npm_completion npm
-fi
-# }}}
-
 # {{{ [ functions ]
-cdf() {
-	target=`osascript -e 'tell application "Finder" to if (count of Finder windows) > 0 then get POSIX path of (target of front Finder window as text)'`
-	if [ "$target" != "" ]; then
-		cd "$target"; pwd
-	else
-		echo 'No Finder window found' >&2
-	fi
-}
-code () {
+code() {
 	if [[ $# = 0 ]]
 	then
 		open -a "Visual Studio Code"
